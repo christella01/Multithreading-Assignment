@@ -1,87 +1,86 @@
-java.util.concurrent.ExecutorService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-    public class Main {
+public class Main {
 
-        public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException {
 
-            BankAccount[] accounts = new BankAccount[10];
+        BankAccount[] accounts = new BankAccount[10];
 
-            for (int i = 0; i < accounts.length; i++) {
-                accounts[i] = new BankAccount(10000);
-            }
+        for (int i = 0; i < accounts.length; i++) {
+            accounts[i] = new BankAccount(10000);
+        }
 
-            double initialTotal = 0;
+        double initialTotal = 0;
 
-            for (BankAccount account : accounts) {
-                initialTotal += account.getBalance();
-            }
+        for (BankAccount account : accounts) {
+            initialTotal += account.getBalance();
+        }
 
-            System.out.println("Initial total: $" + initialTotal);
+        System.out.println("Initial total: $" + initialTotal);
 
-            ExecutorService pool = Executors.newFixedThreadPool(10);
+        ExecutorService pool = Executors.newFixedThreadPool(10);
 
-            long startTime = System.currentTimeMillis();
+        long startTime = System.currentTimeMillis();
 
-            for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < 100000; i++) {
 
-                int sourceIndex =
+            int sourceIndex =
+                    (int) (Math.random() * accounts.length);
+
+            int destinationIndex =
+                    (int) (Math.random() * accounts.length);
+
+            while (sourceIndex == destinationIndex) {
+                destinationIndex =
                         (int) (Math.random() * accounts.length);
-
-                int destinationIndex =
-                        (int) (Math.random() * accounts.length);
-
-                while (sourceIndex == destinationIndex) {
-                    destinationIndex =
-                            (int) (Math.random() * accounts.length);
-                }
-
-                double amount = 1 + Math.random() * 100;
-
-                TransferTask task = new TransferTask(
-                        accounts[sourceIndex],
-                        accounts[destinationIndex],
-                        amount
-                );
-
-                pool.execute(task);
             }
 
-            pool.shutdown();
+            double amount = 1 + Math.random() * 100;
 
-            boolean finished = pool.awaitTermination(
-                    5, TimeUnit.MINUTES
+            TransferTask task = new TransferTask(
+                    accounts[sourceIndex],
+                    accounts[destinationIndex],
+                    amount
             );
 
-            if (!finished) {
-                pool.shutdownNow();
-                System.out.println("Transfers did not finish in time.");
-                return;
-            }
+            pool.execute(task);
+        }
 
-            long endTime = System.currentTimeMillis();
+        pool.shutdown();
 
-            double finalTotal = 0;
+        boolean finished = pool.awaitTermination(
+                5, TimeUnit.MINUTES
+        );
 
-            for (BankAccount account : accounts) {
-                finalTotal += account.getBalance();
-            }
+        if (!finished) {
+            pool.shutdownNow();
+            System.out.println("Transfers did not finish in time.");
+            return;
+        }
 
-            System.out.println("Final total: $" + finalTotal);
-            System.out.println("Execution time: "
-                    + (endTime - startTime) + " milliseconds");
+        long endTime = System.currentTimeMillis();
 
-            for (int i = 0; i < accounts.length; i++) {
-                System.out.println("Account " + (i + 1)
-                        + " balance: $" + accounts[i].getBalance());
-            }
+        double finalTotal = 0;
 
-            if (Math.abs(initialTotal - finalTotal) < 0.01) {
-                System.out.println("Total balance is preserved.");
-            } else {
-                System.out.println("WARNING: Total balance changed!");
-            }
+        for (BankAccount account : accounts) {
+            finalTotal += account.getBalance();
+        }
+
+        System.out.println("Final total: $" + finalTotal);
+        System.out.println("Execution time: "
+                + (endTime - startTime) + " milliseconds");
+
+        for (int i = 0; i < accounts.length; i++) {
+            System.out.println("Account " + (i + 1)
+                    + " balance: $" + accounts[i].getBalance());
+        }
+
+        if (Math.abs(initialTotal - finalTotal) < 0.01) {
+            System.out.println("Total balance is preserved.");
+        } else {
+            System.out.println("WARNING: Total balance changed!");
         }
     }
+}
